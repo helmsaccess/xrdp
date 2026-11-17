@@ -1,0 +1,24 @@
+{
+  "baseCommit": "62987220b8550d5fef750ba5678c5ea987d92902",
+  "compiler": "cc (GCC) 16.2.1 20261029 (Red Hat 16.2.1-3)",
+  "observations": {
+    "original": [
+      {
+        "failed_cycle": 128,
+        "occupied_slots": 255,
+        "unassigned_id": 0
+      }
+    ],
+    "patched": [
+      {
+        "completed_cycles": 1000,
+        "static_clients_preserved": 1,
+        "dynamic_clients_closed": 2000
+      },
+      {
+        "allocated_dechunkers": 2000,
+        "freed_dechunkers": 2000
+      }
+    ]
+  }
+}

@@ -1,0 +1,82 @@
+From 01878ac9a1520db97b98908da0f6c3a7de968218 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marc-Andr=C3=A9=20Beckmann-Butz?= <MAButz@outlook.de>
+Date: Thu, 24 Sep 2026 12:27:28 +0200
+Subject: [PATCH] chansrv: reset the dynamic channel table when xrdp
+ disconnects
+
+When the xrdp connection goes away, every dynamic virtual channel goes
+with it, but chansrv kept its g_drdynvcs slots in whatever state they
+were. chansrv_drdynvc_open() only reuses CLOSED slots, so each reconnect
+used up fresh ones, and an xrdpapi client that had a dynamic channel
+open kept a channel id which, after the reconnect, could belong to a
+different channel.
+
+On disconnect, drop the xrdpapi connections that use a dynamic channel,
+so the client sees the channel end and can open it again, then free the
+dechunkers and clear the table.
+---
+ sesman/chansrv/chansrv.c | 44 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 44 insertions(+)
+
+diff --git a/sesman/chansrv/chansrv.c b/sesman/chansrv/chansrv.c
+index 2e70fe1b22..b7dfa759cf 100644
+--- a/sesman/chansrv/chansrv.c
++++ b/sesman/chansrv/chansrv.c
+@@ -1648,6 +1648,49 @@ api_con_trans_list_remove_all(void)
+     return 0;
+ }
+ 
++/*****************************************************************************/
++/*
++ * The xrdp connection has gone away, and with it every dynamic virtual
++ * channel. Disconnect the xrdpapi clients that had one open, so they see
++ * the channel end and can open it again after a reconnect, and mark all
++ * slots free again. Without this the slots stay in use, and after a
++ * reconnect an xrdpapi client still holds a channel id that may by then
++ * belong to a different channel.
++ */
++static void
++drdynvc_reset_all(void)
++{
++    int api_con_index;
++    int index;
++    struct trans *ltran;
++    struct xrdp_api_data *ad;
++
++    for (api_con_index = g_api_con_trans_list->count - 1;
++            api_con_index >= 0;
++            api_con_index--)
++    {
++        ltran = (struct trans *)
++                list_get_item(g_api_con_trans_list, api_con_index);
++        if (ltran == NULL)
++        {
++            continue;
++        }
++        ad = (struct xrdp_api_data *) (ltran->callback_data);
++        if (ad != NULL && ad->chan_flags != 0)
++        {
++            list_remove_item(g_api_con_trans_list, api_con_index);
++            g_free(ad);
++            trans_delete(ltran);
++        }
++    }
++
++    for (index = 0; index < DRDYNVC_CHANNEL_COUNT; index++)
++    {
++        dyn_dechunker_free(g_drdynvcs[index].dc);
++    }
++    g_memset(g_drdynvcs, 0, sizeof(g_drdynvcs));
++}
++
+ /*****************************************************************************/
+ static THREAD_RV THREAD_CC
+ channel_thread_loop(void *in_val)
+@@ -1710,6 +1753,7 @@ channel_thread_loop(void *in_val)
+                     sound_deinit();
+                     devredir_deinit();
+                     rail_deinit();
++                    drdynvc_reset_all();
+                     /* delete g_con_trans */
+                     trans_delete(g_con_trans);
+                     g_con_trans = 0;

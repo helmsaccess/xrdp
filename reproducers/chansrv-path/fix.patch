@@ -1,0 +1,11 @@
+--- a/xrdp/xrdp_mm.c
++++ b/xrdp/xrdp_mm.c
+@@ -3078,7 +3078,7 @@
+ 
+         g_snprintf(dest, dest_size, XRDP_CHANSRV_STR, uid, dstr);
+     }
+-    else
++    else if (dest != NULL && dest_size > 0)
+     {
+         strlcpy(dest, value, dest_size);
+     }

@@ -1,0 +1,47 @@
+{
+  "baseCommit": "62987220b8550d5fef750ba5678c5ea987d92902",
+  "compiler": "cc (GCC) 16.2.1 20261029 (Red Hat 16.2.1-3)",
+  "libc": "glibc 2.43",
+  "results": {
+    "original": [
+      {
+        "binding": "libc-plain",
+        "available": true,
+        "exitCode": 0,
+        "parserCasesCompleted": true
+      },
+      {
+        "binding": "libc-nonnull-sanitizer-trap",
+        "available": true,
+        "exitCode": -4,
+        "parserCasesCompleted": false
+      },
+      {
+        "binding": "actual-xrdp-fallback",
+        "available": true,
+        "exitCode": 0,
+        "parserCasesCompleted": true
+      }
+    ],
+    "patched": [
+      {
+        "binding": "libc-plain",
+        "available": true,
+        "exitCode": 0,
+        "parserCasesCompleted": true
+      },
+      {
+        "binding": "libc-nonnull-sanitizer-trap",
+        "available": true,
+        "exitCode": 0,
+        "parserCasesCompleted": true
+      },
+      {
+        "binding": "actual-xrdp-fallback",
+        "available": true,
+        "exitCode": 0,
+        "parserCasesCompleted": true
+      }
+    ]
+  }
+}
