@@ -1456,6 +1456,37 @@ api_con_trans_list_remove_all(void)
 }
 
 /*****************************************************************************/
+/* Based on upstream PR 3888, commit 01878ac9a1520db97b98908da0f6c3a7de968218.
+ * XRDP 0.10.6.1 has no dynamic-channel dechunker objects to release.
+ * Drop dynamic API clients and reset all slots when their RDP transport ends.
+ * Static session-state subscribers remain connected.
+ */
+static void
+drdynvc_reset_all(void)
+{
+    int index;
+    struct trans *trans;
+    struct xrdp_api_data *ad;
+
+    for (index = g_api_con_trans_list->count - 1; index >= 0; index--)
+    {
+        trans = (struct trans *)list_get_item(g_api_con_trans_list, index);
+        if (trans == NULL)
+        {
+            continue;
+        }
+        ad = (struct xrdp_api_data *)trans->callback_data;
+        if (ad != NULL && ad->chan_flags != 0)
+        {
+            list_remove_item(g_api_con_trans_list, index);
+            g_free(ad);
+            trans_delete(trans);
+        }
+    }
+    g_memset(g_drdynvcs, 0, sizeof(g_drdynvcs));
+}
+
+/*****************************************************************************/
 THREAD_RV THREAD_CC
 channel_thread_loop(void *in_val)
 {
@@ -1517,6 +1548,7 @@ channel_thread_loop(void *in_val)
                     sound_deinit();
                     devredir_deinit();
                     rail_deinit();
+                    drdynvc_reset_all();
                     /* delete g_con_trans */
                     trans_delete(g_con_trans);
                     g_con_trans = 0;
